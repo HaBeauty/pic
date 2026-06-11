@@ -281,8 +281,6 @@ if ($failure_count -gt 0) {
 else {
     Write-Host "All commands executed successfully!" -ForegroundColor Green
 }
-Write-Host ""
-if ($args[0] -ne "/DisablePausePrompts") { pause }
 
 # Disable all startup applications
 Write-Host ""
@@ -410,18 +408,26 @@ Write-Host "Startup cleanup complete: Disabled $startupDisabled, Skipped $startu
 Write-Host "========================================================"
 Write-Host ""
 
-# 6. Restart the computer
-Write-Host "The system will restart in 10 seconds. Press Ctrl+C to cancel." -ForegroundColor Cyan
-try {
-    for ($i = 30; $i -ge 0; $i--) {
-        Write-Progress -Activity "System Restart Countdown" -Status "The system will restart in $i seconds" -SecondsRemaining $i -PercentComplete ((30-$i)*10)
-        Start-Sleep -Seconds 1
+function Restart-Computer {
+    # Restart the computer
+    Write-Host "The system will restart in 10 seconds. Press Ctrl+C to cancel." -ForegroundColor Cyan
+    try {
+        for ($i = 10; $i -ge 0; $i--) {
+            Write-Progress -Activity "System Restart Countdown" -Status "The system will restart in $i seconds" -SecondsRemaining $i -PercentComplete ((10-$i)*10)
+            Start-Sleep -Seconds 1
+        }
+        
+        Write-Host "`nRestarting system now..." -ForegroundColor Red
+        Restart-Computer -Force
+        
+    } catch {
+        Write-Host "`nRestart cancelled by user." -ForegroundColor Green
+        exit 0
     }
-    
-    Write-Host "`nRestarting system now..." -ForegroundColor Red
-    Restart-Computer -Force
-    
-} catch {
-    Write-Host "`nRestart cancelled by user." -ForegroundColor Green
-    exit 0
+}
+
+# 询问是否需要重启
+$restart = Read-Host "Do you want to restart the computer now? (y/n)"
+if ($restart -eq "y") {
+    Restart-Computer
 }
