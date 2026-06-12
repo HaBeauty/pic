@@ -128,6 +128,7 @@ if (-not (Test-Path "C:\ProgramFiles")) {
 }
 
 # update App Installer
+Write-Host "Updating App Installer..." -ForegroundColor Cyan
 winget upgrade --id Microsoft.AppInstaller --silent --accept-source-agreements --accept-package-agreements
 
 $success_count=0

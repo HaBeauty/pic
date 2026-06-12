@@ -128,6 +128,7 @@ if (-not (Test-Path "C:\ProgramFiles")) {
 }
 
 # update App Installer
+Write-Host "Updating App Installer..." -ForegroundColor Cyan
 winget upgrade --id Microsoft.AppInstaller --silent --accept-source-agreements --accept-package-agreements
 
 $success_count=0
@@ -142,19 +143,49 @@ $commands= @(
 )
 
 foreach ($command in $commands) {
-    Write-Host "Running: $command" -ForegroundColor Yellow
-    cmd.exe /C $command
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "[  OK  ] $command" -ForegroundColor Green
-        $success_count++
-        $results += "$([char]0x1b)[32m[  OK  ] $command`n"
-        $log_results += "[  OK  ] $command`n"
+    # Extract package ID from command
+    $packageId = "Unknown"
+    if ($command -match '--id\s+"([^"]+)"') {
+        $packageId = $Matches[1]
     }
-    else {
-        Write-Host "[ FAIL ] $command" -ForegroundColor Red
-        $failure_count++
-        $results += "$([char]0x1b)[31m[ FAIL ] $command`n"
-        $log_results += "[ FAIL ] $command`n"
+
+    # Extract source from command
+    $source = "winget"
+    if ($command -match '--source\s+(\S+)') {
+        $source = $Matches[1]
+    }
+
+    # Check if already installed
+    $installed = $false
+    try {
+        $listResult = winget list --id $packageId --exact --source $source --accept-source-agreements --disable-interactivity 2>$null | Out-String
+        if ($listResult -and $listResult -notmatch "No installed package" -and $listResult -match [regex]::Escape($packageId)) {
+            $installed = $true
+        }
+    } catch {
+        # If check fails, proceed with install
+    }
+
+    if ($installed) {
+        Write-Host "$packageId already installed" -ForegroundColor Cyan
+        $success_count++
+        $results += "$([char]0x1b)[36m$packageId already installed`n"
+        $log_results += "$packageId already installed`n"
+    } else {
+        Write-Host "Installing: $packageId" -ForegroundColor Yellow
+        cmd.exe /C $command
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "$packageId installed successfully" -ForegroundColor Green
+            $success_count++
+            $results += "$([char]0x1b)[32m$packageId installed successfully`n"
+            $log_results += "$packageId installed successfully`n"
+        }
+        else {
+            Write-Host "$packageId install failed" -ForegroundColor Red
+            $failure_count++
+            $results += "$([char]0x1b)[31m$packageId install failed`n"
+            $log_results += "$packageId install failed`n"
+        }
     }
     $commands_run++
     Write-Host ""
