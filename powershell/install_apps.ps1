@@ -457,7 +457,7 @@ function Restart-Computer {
     }
 }
 
-# 询问是否需要重启
+# Ask if user wants to restart the computer
 $restart = Read-Host "Do you want to restart the computer now? (y/n)"
 if ($restart -eq "y") {
     Restart-Computer
